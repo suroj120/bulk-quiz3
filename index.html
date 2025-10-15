@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bulk Trade Docs Quiz</title>
+  <style>
+    :root{
+      --bg1:#0f2027; --bg2:#203a43; --card: rgba(255,255,255,0.06);
+      --accent:#00d4ff; --ok:#1de9b6; --bad:#ff1744;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0}
+    body{
+      display:flex;align-items:center;justify-content:center;
+      background: linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:#fff;padding:20px;
+    }
+    .card{
+      width:100%;max-width:720px;background:var(--card);
+      padding:26px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.45);
+    }
+    h1{margin:0 0 14px;color:var(--accent);font-size:20px}
+    .q{font-size:17px;margin:18px 0}
+    .opts{display:grid;gap:10px}
+    .opt{background:#00000010;border:0;padding:10px;border-radius:8px;text-align:left;cursor:pointer}
+    .opt:disabled{opacity:.7;cursor:default}
+    .controls{display:flex;gap:10px;align-items:center;margin-top:18px}
+    .btn{background:var(--accent);color:#000;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .btn.secondary{background:#ffffff11;color:#fff}
+    .score{margin-top:12px;font-weight:700}
+    .small{font-size:13px;opacity:.85}
+    footer{margin-top:12px;font-size:12px;opacity:.8}
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>Bulk Trade Docs — 10 Question Quiz</h1>
+    <div id="quiz-area" aria-live="polite">
+      <div id="question" class="q">Loading...</div>
+      <div id="options" class="opts"></div>
+
+      <div class="controls">
+        <button id="nextBtn" class="btn" style="display:none">Next →</button>
+        <button id="restartBtn" class="btn secondary" style="display:none">Restart</button>
+        <div id="status" class="small" style="margin-left:auto"></div>
+      </div>
+
+      <div id="result" class="score" role="status"></div>
+    </div>
+
+    <footer class="small">If the quiz does not appear, make sure this file is named <code>index.html</code> and placed at the repository root, then redeploy.</footer>
+  </main>
+
+  <script>
+    // Quiz data (index: 0..)
+    const quizData = [
+      {q:"What is the core purpose of BULK Exchange?", opts:["A. A lending protocol for stablecoins","B. A decentralized swap (AMM) platform","C. A high-performance orderbook bridging speed and decentralization","D. A platform for NFT minting"], a:2},
+      {q:"In BULK T1 architecture, what component handles in-memory matching?", opts:["A. BULK Net","B. BULK Tile","C. BULK Db","D. Commit Path"], a:1},
+      {q:"What does the Commit Path do in BULK architecture?", opts:["A. Transmits orders across the network","B. Stores trade logs in the database","C. Batches state updates and commits to Solana","D. Runs the user interface"], a:2},
+      {q:"Which mechanism prevents self-trading on BULK?", opts:["A. Auto Deleveraging","B. Liquidation Engine","C. Self-Trade Prevention (STP)","D. Price Indices"], a:2},
+      {q:"What are the two margin modes supported on BULK?", opts:["A. Fixed and Floating","B. Cross Margin and Isolated Margin","C. Portfolio Margin and Maintenance Margin","D. Deferred Margin and Immediate Margin"], a:1},
+      {q:"What is a reduce-only order?", opts:["A. Only opens new positions","B. Only reduces or closes an existing position","C. Increases leverage","D. Delays execution"], a:1},
+      {q:"What does 'finality' refer to in BULK?", opts:["A. Trade transmission time","B. Economic and settlement finality on Solana","C. Order cancel moment","D. UI load time"], a:1},
+      {q:"What is the Orderbook in BULK?", opts:["A. Record of user accounts","B. Central limit order book for perpetual markets","C. List of all liquidations","D. History of API calls"], a:1},
+      {q:"Which instruments and leverage tiers are on BULK Alphanet?", opts:["A. Only BTC/USD with 5×","B. BTC, ETH, SOL / USD each with 20×","C. Only stablecoins with no leverage","D. SOL/USD with 50×"], a:1},
+      {q:"What is leaderless decentralization in BULK?", opts:["A. Single sequencer controls ordering","B. No central block producer or sequencer","C. No consensus at all","D. One node runs all logic"], a:1}
+    ];
+
+    // UI refs
+    const qEl = document.getElementById('question');
+    const optsEl = document.getElementById('options');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const resultEl = document.getElementById('result');
+    const statusEl = document.getElementById('status');
+
+    let idx = 0, score = 0;
+
+    function renderQuestion() {
+      const item = quizData[idx];
+      qEl.textContent = ${idx+1}. ${item.q};
+      optsEl.innerHTML = '';
+      item.opts.forEach((t, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt';
+        btn.type = 'button';
+        btn.textContent = t;
+        btn.onclick = () => selectOption(i, btn);
+        optsEl.appendChild(btn);
+      });
+      nextBtn.style.display = 'none';
+      restartBtn.style.display = 'none';
+      resultEl.textContent = '';
+      statusEl.textContent = Question ${idx+1} of ${quizData.length};
+    }
+
+    function selectOption(choice, button) {
+      // disable all
+      Array.from(optsEl.children).forEach(b => b.disabled = true);
+      const correct = quizData[idx].a;
+      if (choice === correct) {
+        button.style.background = 'var(--ok)';
+        score++;
+      } else {
+        button.style.background = 'var(--bad)';
+        // highlight correct
+        optsEl.children[correct].style.background = 'var(--ok)';
+      }
+      nextBtn.style.display = 'inline-block';
+      restartBtn.style.display = 'inline-block';
+    }
+
+    nextBtn.onclick = () => {
+      idx++;
+      if (idx < quizData.length) {
+        renderQuestion();
+      } else showResult();
+    };
+
+    restartBtn.onclick = () => {
+      idx = 0; score = 0; renderQuestion();
+    };
+
+    function showResult() {
+      qEl.textContent = 'Quiz finished';
+      optsEl.innerHTML = '';
+      resultEl.textContent = 🎯 You scored ${score} of ${quizData.length};
+      nextBtn.style.display = 'none';
+      restartBtn.style.display = 'inline-block';
+      statusEl.textContent = 'Completed';
+    }
+
+    // Initialize
+    renderQuestion();
+  </script>
+</body>
+</html>
